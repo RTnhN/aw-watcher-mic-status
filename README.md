@@ -1,14 +1,12 @@
-aw-watcher-template
+aw-watcher-mic-status
 ==================
 
-This is a template watcher for [ActivityWatch](https://github.com/ActivityWatch/activitywatch). It can be used as a starting point for creating your own watchers. Before you use it, make sure that you remove all the references to `aw-watcher-template` in the code. This will include the the folder names as well as the name of the package. You can do this by doing a global search and replace for `aw-watcher-template` with the name of your watcher.
+This is a watcher that checks if a mic is active or not. It does not save any audio. This can be great to check if you had a meeting during a period of time or if you were playing a game online.
 
-This watcher is currently in a early stage of development, please submit PRs if you find bugs!
+This watcher is currently in a early stage of development, please submit PRs if you find bugs! I have only tested this on windows. Please let me know if you have tested it on other OS's such as macOS or Linux.
 
 
 ## Usage
-
-### Step 0: Do Something like setup an API key 
 
 ### Step 1: Install package
 
@@ -20,12 +18,12 @@ pip install .
 
 First run (generates config):
 ```sh
-python aw-watcher-template/main.py
+python aw-watcher-mic-status/main.py
 ```
 
 ### Step 2: Enter config
 
-Make sure to describe what types of config you need to do in the config file. 
+The only thing that you might need to change is the poll time. This is the time that the checking loop will run. 
 
 
 ### Step 3: Restart the server and enable the watcher

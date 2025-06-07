@@ -1,17 +1,18 @@
 [tool.poetry]
-name = "aw-watcher-template"
+name = "aw-watcher-mic-status"
 version = "0.0.1"
-description = "Template watcher for ActivityWatch"
-authors = ["John Smith <john.smith@example.com>"]
+description = "Microphone Status Watcher for ActivityWatch"
+authors = ["Zach Strout <zachstrout@gmail.com>"]
 license = "MPL-2.0"
-repository = "https://github.com/RTnhN/aw-watcher-template"
+repository = "https://github.com/RTnhN/aw-watcher-mic-status"
 
 [tool.poetry.scripts]
-aw-watcher-template = "aw_watcher_template:main"
+aw-watcher-mic-status = "aw_watcher_mic_status:main"
 
 [tool.poetry.dependencies]
 python = "^3.7"
 aw-client = "^0.5.7"
+psutil = "^7.0.0"
 
 [build-system]
 requires = ["poetry>=0.12"]
