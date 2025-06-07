@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "aw-watcher-template"
+version = "0.0.1"
+description = "Template watcher for ActivityWatch"
+authors = ["John Smith <john.smith@example.com>"]
+license = "MPL-2.0"
+repository = "https://github.com/RTnhN/aw-watcher-template"
+
+[tool.poetry.scripts]
+aw-watcher-template = "aw_watcher_template:main"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+aw-client = "^0.5.7"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
