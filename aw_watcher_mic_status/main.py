@@ -54,9 +54,9 @@ def main():
     while True:
 
         try:
-            title =  f"mic off"
+            title =  f"Mic off"
             if is_mic_active():
-                title =  f"mic on"
+                title =  f"Mic on"
             data = {"title": title}
             print_statusline(title)
             event = Event(timestamp=datetime.now(timezone.utc), data=data)
