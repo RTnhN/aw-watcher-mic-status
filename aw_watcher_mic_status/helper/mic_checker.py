@@ -4,9 +4,10 @@ import glob
 import platform
 import subprocess
 import sys
-from typing import Callable, Optional
+from typing import Callable
 
-def is_mic_active() -> Optional[bool]:
+
+def is_mic_active() -> tuple[bool, str]:
     """Return microphone activity status for the current OS."""
     return _dispatch(
         windows=_win_mic_active,
@@ -14,7 +15,8 @@ def is_mic_active() -> Optional[bool]:
         linux=_nix_mic_active,
     )
 
-def _dispatch(**impl: Callable[[], Optional[bool]]) -> Optional[bool]:
+
+def _dispatch(**impl: Callable[[], tuple[bool, str]]) -> tuple[bool, str]:
     osname = platform.system().lower()
     if osname.startswith("win"):
         return impl["windows"]()
@@ -22,7 +24,7 @@ def _dispatch(**impl: Callable[[], Optional[bool]]) -> Optional[bool]:
         return impl["darwin"]()
     if osname == "linux":
         return impl["linux"]()
-    return None  # unsupported platform
+    return (False, "Not supported")
 
 
 def _safe_run(cmd: list[str]) -> subprocess.CompletedProcess:
@@ -34,31 +36,41 @@ def _safe_run(cmd: list[str]) -> subprocess.CompletedProcess:
         text=True,
     )
 
+
 if sys.platform.startswith("win"):
-    import ctypes
     import winreg
 
     _REG_PATH = r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore"
 
-    def _win_cap_active(cap: str) -> Optional[bool]:
+    def _win_cap_active(cap: str) -> tuple[bool, str]:
         """
         Check CapabilityAccessManager usage counters.
         A value `LastUsedTimeStart` > `LastUsedTimeStop`
         means the capability is in use *right now*.
         """
         try:
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, rf"{_REG_PATH}\{cap}") as root:
-                if _subkeys_active(root):
-                    return True
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER, rf"{_REG_PATH}\{cap}"
+            ) as root:
+                for idx in range(winreg.QueryInfoKey(root)[0]):
+                    sub = winreg.EnumKey(root, idx)
+                    with winreg.OpenKey(root, sub) as key:
+                        if _subkeys_active(key):
+                            return (True, sub)
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER, rf"{_REG_PATH}\{cap}\NonPackaged"
+            ) as root:
                 # packaged & non-packaged subkeys live one level deeper
                 for idx in range(winreg.QueryInfoKey(root)[0]):
                     sub = winreg.EnumKey(root, idx)
                     with winreg.OpenKey(root, sub) as key:
                         if _subkeys_active(key):
-                            return True
-        except OSError:
-            pass
-        return False
+                            return (True, sub)
+
+        except OSError as e:
+            print(f"winreg error: {e}")
+
+        return (False, "off")
 
     def _subkeys_active(hkey) -> bool:
         try:
@@ -69,11 +81,11 @@ if sys.platform.startswith("win"):
         except FileNotFoundError:
             return False
 
-    def _win_mic_active() -> Optional[bool]:
+    def _win_mic_active() -> tuple[bool, str]:
         return _win_cap_active("microphone")
 
 
-def _mac_mic_active() -> Optional[bool]:
+def _mac_mic_active() -> tuple[bool, str]:
     """
     Quick heuristic: list open CoreAudio capture streams.
     We call `lsof -Fn -c coreaudiod` (no sudo needed);
@@ -81,10 +93,13 @@ def _mac_mic_active() -> Optional[bool]:
     """
     out = _safe_run(["lsof", "-Fn", "-c", "coreaudiod"])
     if out.returncode:
-        return None
-    return any("/dev/" in line for line in out.stdout.splitlines())
+        return (False, "off")
+    if any("/dev/" in line for line in out.stdout.splitlines()):
+        return (True, "Active")
+    return (False, "off")
 
-def _nix_mic_active() -> Optional[bool]:
+
+def _nix_mic_active() -> tuple[bool, str]:
     """
     ALSA exposes stream state under
     /proc/asound/card*/pcm*/sub0/status.
@@ -94,10 +109,10 @@ def _nix_mic_active() -> Optional[bool]:
         try:
             with open(status_file) as fh:
                 if "state: RUNNING" in fh.read():
-                    return True
+                    return (True, "Active")
         except FileNotFoundError:
             continue
-    return False
+    return (False, "off")
 
 
 # ----------------------------  self-test  ---------------------------- #
